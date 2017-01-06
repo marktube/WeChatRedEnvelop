@@ -1,5 +1,5 @@
 #import "WeChatRedEnvelop.h"
-#import "XGPayingViewController.h"
+//#import "XGPayingViewController.h"
 
 %hook CMessageMgr
 - (void)AsyncOnAddMsg:(NSString *)msg MsgWrap:(CMessageWrap *)wrap {
@@ -84,11 +84,11 @@
 		delayCellInfo = [%c(MMTableViewCellInfo) normalCellForSel:@selector(settingDelay) target:self title:@"随机延迟" rightValue:delaySecondsString accessoryType:accessoryType];
 	}
 
-	MMTableViewCellInfo *payingCellInfo = [%c(MMTableViewCellInfo) normalCellForSel:@selector(payingToAuthor) target:self title:@"打赏" rightValue:@"支持作者开发" accessoryType:1];	
+	//MMTableViewCellInfo *payingCellInfo = [%c(MMTableViewCellInfo) normalCellForSel:@selector(payingToAuthor) target:self title:@"打赏" rightValue:@"支持作者开发" accessoryType:1];	
 
 	[sectionInfo addCell:cellInfo];
 	[sectionInfo addCell:delayCellInfo];
-	[sectionInfo addCell:payingCellInfo];
+	//[sectionInfo addCell:payingCellInfo];
 
 	[tableViewInfo insertSection:sectionInfo At:0];	
 
@@ -107,35 +107,42 @@
 
 %new 
 - (void)settingDelay {
-	UIAlertView *alert = [UIAlertView new];
-    alert.title = @"随机延迟(秒)";
+    UIAlertController *alert = [UIAlertController
+        alertControllerWithTitle:@"随机延迟(秒)"
+        message:@"输入时间"
+    preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *textField)
+    {
+        textField.placeholder = NSLocalizedString(@"Time Delay", @"Delay");
+        textField.keyboardType = UIKeyboardTypeNumberPad;
+    }];
+
+    UIAlertAction *cancelAction = [UIAlertAction 
+    actionWithTitle:NSLocalizedString(@"Cancel", @"cancel action") 
+    style:UIAlertActionStyleDefault handler:nil];
     
-    alert.alertViewStyle = UIAlertViewStylePlainTextInput;
-    alert.delegate = self;
-    [alert addButtonWithTitle:@"取消"];
-    [alert addButtonWithTitle:@"确定"];
-    
-    [alert textFieldAtIndex:0].placeholder = @"延迟时长";
-    [alert textFieldAtIndex:0].keyboardType = UIKeyboardTypeNumberPad;
-    [alert show];
+
+    UIAlertAction *okAction = [UIAlertAction
+    actionWithTitle:NSLocalizedString(@"OK", @"OK action")
+        style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+            UITextField *login = alert.textFields.firstObject;
+            NSString *time = login.text;
+            NSInteger delaySeconds = [time integerValue];
+            [[NSUserDefaults standardUserDefaults] setInteger:delaySeconds forKey:@"XGDelaySecondsKey"];
+
+            [self reloadTableData];
+
+    }];
+
+    [alert addAction:cancelAction];    
+    [alert addAction:okAction];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
-%new
+/*%new
 - (void)payingToAuthor {
 	XGPayingViewController *payingViewController = [[XGPayingViewController alloc] init];
 	[self.navigationController PushViewController:payingViewController animated:YES];
-}
-
-%new
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == 1) {
-    	NSString *delaySecondsString = [alertView textFieldAtIndex:0].text;
-    	NSInteger delaySeconds = [delaySecondsString integerValue];
-
-    	[[NSUserDefaults standardUserDefaults] setInteger:delaySeconds forKey:@"XGDelaySecondsKey"];
-
-    	[self reloadTableData];
-    }
-}
+}*/
 
 %end
